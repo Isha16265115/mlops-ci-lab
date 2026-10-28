@@ -1,0 +1,37 @@
+
+name: ML CI Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check training script syntax
+        run: python -m py_compile model.py
+
+      - name: Run automated tests and save report
+        run: python -m pytest -v --junitxml=test-report.xml
+
+      - name: Run model training and save build report
+        run: python model.py > build-report.txt
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-ci-reports
+          path: |
+            test-report.xml
+            build-report.txt
+          if-no-files-found: warn
